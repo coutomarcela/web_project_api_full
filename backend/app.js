@@ -2,6 +2,10 @@ const express = require("express");
 
 const mongoose = require("mongoose");
 
+const { errors } = require("celebrate");
+
+require("dotenv").config();
+
 mongoose
   .connect("mongodb://localhost:27017/aroundb")
   .then(() => {
@@ -22,15 +26,6 @@ const app = express();
 //permite que o express leia json e permite armazenar um objeto json no corpo da requisição - req.body
 app.use(express.json());
 
-//middleware
-app.use((req, res, next) => {
-  req.user = {
-    _id: "6ac4f463b4d0361bb544fcba",
-  };
-
-  next();
-});
-
 app.use("/cards", cardsRouter);
 
 app.use("/users", usersRouter);
@@ -40,8 +35,12 @@ app.use("", (req, res) => {
   res.status(404).send({ message: "A solicitação não foi encontrada" });
 });
 
+//tratamento de erros celebrate
+app.use(errors());
+
 //middleware global de tratamento de erro
 app.use((error, req, res, next) => {
+  console.log(error);
   //erro quando o id tem formato válido, mas não existe um usuário com esse id
   if (error.statusCode === 404) {
     res.status(404).send({ message: "Card não encontrado" });
@@ -52,6 +51,15 @@ app.use((error, req, res, next) => {
     res.status(400).send({ message: "Formato de id inválido" });
     return;
   }
+  if (error.name === "TypeError") {
+    res.status(400).send({ message: "Dados inválidos" });
+    return;
+  }
+  if (error.name === "MongoServerError" && error.code === 11000) {
+    res.status(409).send({ message: "Dados já cadastrados" });
+    return;
+  }
+
   res.status(500).send({ message: "Erro no Servidor" });
 });
 

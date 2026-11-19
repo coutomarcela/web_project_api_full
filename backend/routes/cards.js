@@ -10,11 +10,13 @@ const {
   dislikeCard,
 } = require("../controllers/cards");
 
+const { authorization } = require("../middleware/auth");
+
 //rota all cards
 router.get("/", getCards);
 
 //rota new card
-router.post("/", newCard);
+router.post("/", authorization, newCard);
 
 //rota delete card by id
 router.delete("/:cardId", deleteCard);

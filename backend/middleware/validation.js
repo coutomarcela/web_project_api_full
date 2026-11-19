@@ -1,7 +1,7 @@
 const { celebrate, Joi } = require("celebrate");
 const validator = require("validator");
 
-module.exports.validateURL = (value, helpers) => {
+const validateURL = (value, helpers) => {
   if (validator.isURL(value)) {
     return value;
   }
@@ -37,8 +37,7 @@ module.exports.validateAvatar = celebrate({
 
 module.exports.validateEditProfile = celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().custom(validateURL).messages({
-      "string.uri": "O avatar informado não é uma URL válida",
-    }),
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).max(30),
   }),
 });

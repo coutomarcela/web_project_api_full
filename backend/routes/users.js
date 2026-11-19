@@ -1,8 +1,10 @@
 const router = require("express").Router();
+
 const {
   validateUserBody,
   validateLogin,
   validateAvatar,
+  validateEditProfile,
 } = require("../middleware/validation");
 
 const {
@@ -12,7 +14,10 @@ const {
   editProfile,
   editAvatar,
   login,
+  getMyUser,
 } = require("../controllers/users");
+
+const { authorization } = require("../middleware/auth.js");
 
 //rota all users
 router.get("", getUsers);
@@ -23,13 +28,16 @@ router.get("/:userId", getUserById);
 //rota new user
 router.post("/register", validateUserBody, newUser);
 
-//rota atualizar perfil
-router.patch("/me", editProfile);
-
-//rota atualizar avatar
-router.patch("/me/avatar", validateAvatar, editAvatar);
-
 //rota login
 router.post("/login", validateLogin, login);
 
-router.module.exports = router;
+//rota atualizar perfil
+router.patch("/me", validateEditProfile, authorization, editProfile);
+
+//rota atualizar avatar
+router.patch("/me/avatar", validateAvatar, authorization, editAvatar);
+
+//rota obtenção de dados do user
+router.get("/users/me", authorization, getMyUser);
+
+module.exports = router;

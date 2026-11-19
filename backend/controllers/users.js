@@ -94,42 +94,54 @@ module.exports.editAvatar = (req, res, next) => {
     });
 };
 
-//rota sign in
-module.exports.signIn = (req, res, next) => {
-  //procura o usuário pelo email
-  User.findOne({ email: req.body.email })
+//controller login
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  console.log(email);
+  User.findOne({ email })
     .then((user) => {
+      console.log(user);
       if (!user) {
-        //erro indica que a solicitação falhou
         const error = new Error("Email ou senha incorretos");
         error.statusCode = 401;
         //interrompe a execução do .then eleva o erro ao .catch
         throw error;
       }
-    })
-    .catch((err) => {
-      //encaminha o erro ao middleware de tratamento de erro
-      next(err);
-    });
-};
-
-//controller login
-module.exports.login = (req, res, next) => {
-  const { email, password } = req.body;
-  User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        return res.status(401).send();
-      }
+      //resposta de compare é um booleano
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
-          return res.status(401).send();
+          const error = new Error("Email ou senha incorretos");
+          error.statusCode = 401;
+          //interrompe a execução do .then eleva o erro ao .catch
+          throw error;
         }
-        const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        //sign cria um novo token
+        //no argumento vão as infos que serão passadas no payload
+        //process.env.JWT_SECRET diz qual senha deverá ser usada para criar e validar o token
+
+        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
           expiresIn: "7d",
         });
         return res.send({ token });
       });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+//rota getMyUser
+module.exports.getMyUser = (req, res, next) => {
+  //propriedade _id está rem req.user devido à autenticação realizada quando a rota é chamada, antes de executar getMyUser
+  const { _id } = req.user;
+  User.findById(_id)
+    .orFail(() => {
+      const error = new Error("Nenhum usuário foi encontrado");
+      error.statusCode = 404;
+      throw error;
+    })
+    .then((user) => {
+      res.send(user);
     })
     .catch((err) => {
       next(err);
